@@ -39,10 +39,13 @@ messages = results.get('messages', [])
 
 found_emails = []
 
+# 디버깅용 로그
+print("검색된 메일 수 :", len(messages))
+
 for message in messages:
     msg = service.users().messages().get(userId='me', id=message['id']).execute()
     payload = msg['payload']
-    # 메일 내용
+
     if 'parts' in payload:
         parts = payload['parts']
         for part in parts:
@@ -50,18 +53,22 @@ for message in messages:
                 data = part['body']['data']
                 decoded_data = base64.urlsafe_b64decode(data).decode('utf-8')
 
+                # 디버깅용 로그
+                print("메일 내용 :", decoded_data)
+
                 # "to" 텍스트 감지해서 뒷내용 추출
                 match = re.search(r'primary alias.*?to\s+([a-zA-Z0-9._%+-]+@outlook\.com)', decoded_data)
                 if match:
                     found_emails.append(match.group(1))
 
-
 # 중복 이메일 제거
 unique_emails = list(set(found_emails))
 
+# 디버깅용 로그
+print("✅ 추출된 이메일:", unique_emails)
+
 with open("microsoft_email.txt", "w") as f:
     f.write("\n".join(unique_emails))
-
 
 # 여기서부터 이메일 유효성 검사
 chrome_options = Options()
@@ -93,7 +100,7 @@ for email in unique_emails:
             time.sleep(3)
 
             security_text = driver.find_element(By.CLASS_NAME, "highlighted-text").text
-            if "gu****@gmail.com" in security_text:
+            if "gu*****@gmail.com" in security_text:
                 guardian_emails.append(email)
 
     except:
